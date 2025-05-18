@@ -111,7 +111,7 @@
   overflow: hidden;
   height: 14px;
   margin-top: 2px;
-  align-self: end;
+  align-self: center;
   justify-self: start;
   z-index: 1;
     }
@@ -279,12 +279,8 @@ eventBars.forEach(({ start, length, title }) => {
     bar.className = "event-bar";
     bar.textContent = title;
     bar.style.gridColumn = `${gridIndex + 1} / span ${length}`;
-    bar.style.position = "absolute";
     bar.style.top = "18px";
-    bar.style.gridColumnStart = gridIndex + 1;
-    bar.style.gridColumnEnd = `span ${length}`;
-    bar.style.gridRow = "2";
-    bar.style.position = "relative";
+    
     days.appendChild(bar);
   }
 });
@@ -339,5 +335,6 @@ eventBars.forEach(({ start, length, title }) => {
   </script>
 </body>
 </html>
+
 
 
