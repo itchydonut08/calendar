@@ -213,10 +213,9 @@
   <div class="calendar-container" id="calendarContainer"></div>
   <script>
     async function loadEvents() {
-      await gapi.client.init({
-        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
-      });
-      gapi.client.setToken({ access_token: localStorage.getItem("gmail_token") });
+      // No need to re-init client here since it's already loaded above
+      const token = localStorage.getItem("gmail_token");
+      gapi.client.setToken({ access_token: token });
       const res = await gapi.client.calendar.events.list({
         calendarId: 'primary',
         timeMin: new Date().toISOString(),
@@ -340,4 +339,3 @@
   </script>
 </body>
 </html>
-
