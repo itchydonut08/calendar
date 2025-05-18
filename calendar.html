@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Calendar</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://apis.google.com/js/api.js"></script>
   <style>
     body {
@@ -12,20 +12,18 @@
       padding: 20px;
       background: #f0f0f0;
       display: flex;
-      flex-direction: column;
-      align-items: center;
+      justify-content: center;
     }
 
     .calendar-container {
       display: flex;
-      flex-direction: column;
-      gap: 30px;
-      margin-top: 10px;
+      gap: 20px;
       width: 100%;
-      max-width: 1000px;
+      max-width: 1500px;
     }
 
     .calendar {
+      flex: 1;
       background: white;
       border-radius: 12px;
       padding: 20px;
@@ -34,8 +32,8 @@
 
     .calendar h2 {
       text-align: center;
+      font-size: 1.3rem;
       margin-bottom: 15px;
-      font-size: 1.5rem;
     }
 
     .day-names, .days {
@@ -46,17 +44,17 @@
 
     .day-names div {
       font-weight: bold;
-      padding: 10px 0;
-      font-size: 1rem;
+      padding: 6px 0;
+      font-size: 0.95rem;
     }
 
     .days div {
       border: 1px solid #ccc;
-      min-height: 80px;
-      padding: 5px;
-      font-size: 0.9rem;
+      min-height: 90px;
+      padding: 4px;
+      font-size: 0.8rem;
       position: relative;
-      overflow: hidden;
+      overflow-y: auto;
     }
 
     .days div.empty {
@@ -70,12 +68,13 @@
 
     .event-tag {
       display: block;
-      font-size: 0.75rem;
-      margin: 2px 0;
+      font-size: 0.7rem;
+      margin-top: 2px;
       padding: 2px 4px;
       border-radius: 4px;
       color: white;
       text-align: left;
+      background: #888;
       word-wrap: break-word;
     }
   </style>
@@ -84,21 +83,17 @@
   <div class="calendar-container" id="calendarContainer"></div>
 
   <script>
-    // Redirect to login if no token
     const token = localStorage.getItem('google_token');
-    if (!token) {
-      window.location.href = 'index.html';
-    }
+    if (!token) window.location.href = 'index.html';
 
+    const calendarContainer = document.getElementById('calendarContainer');
     const monthNames = ["January", "February", "March", "April", "May", "June",
                         "July", "August", "September", "October", "November", "December"];
-    const calendarContainer = document.getElementById('calendarContainer');
     const eventsByDate = {};
 
-    // Generate random pastel color
     function randomColor() {
       const hue = Math.floor(Math.random() * 360);
-      return `hsl(${hue}, 70%, 65%)`;
+      return `hsl(${hue}, 70%, 60%)`;
     }
 
     gapi.load('client', async () => {
@@ -112,7 +107,7 @@
         const res = await gapi.client.calendar.events.list({
           calendarId: 'primary',
           timeMin: new Date().toISOString(),
-          maxResults: 100,
+          maxResults: 250,
           singleEvents: true,
           orderBy: 'startTime'
         });
@@ -123,13 +118,12 @@
         for (const event of res.result.items) {
           const start = new Date(event.start.date || event.start.dateTime);
           const end = new Date(event.end.date || event.end.dateTime);
-          const durationMs = end - start;
+          const duration = end - start;
           const oneDay = 24 * 60 * 60 * 1000;
-          const color = randomColor();
 
-          // Only include events lasting at least 1 day
-          if (durationMs >= oneDay && (start <= threeMonthsOut && end >= now)) {
-            const cur = new Date(start);
+          if (duration >= oneDay && start <= threeMonthsOut && end >= now) {
+            const color = randomColor();
+            let cur = new Date(start);
             cur.setHours(0, 0, 0, 0);
             const endDay = new Date(end);
             endDay.setHours(0, 0, 0, 0);
@@ -149,7 +143,6 @@
 
       } catch (err) {
         console.error("Calendar API error:", err);
-        alert("Error loading events. You may need to log in again.");
         localStorage.removeItem('google_token');
         window.location.href = 'index.html';
       }
@@ -157,9 +150,9 @@
 
     function renderCalendar(monthOffset) {
       const today = new Date();
-      const currentMonth = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
-      const year = currentMonth.getFullYear();
-      const month = currentMonth.getMonth();
+      const current = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+      const year = current.getFullYear();
+      const month = current.getMonth();
       const firstDay = new Date(year, month, 1).getDay();
       const lastDay = new Date(year, month + 1, 0).getDate();
 
@@ -180,9 +173,8 @@
       for (let d = 1; d <= lastDay; d++) {
         const dateObj = new Date(year, month, d);
         const dateStr = dateObj.toDateString();
-        const isToday = dateObj.toDateString() === new Date().toDateString();
+        const isToday = dateStr === new Date().toDateString();
         const div = document.createElement('div');
-
         if (isToday) div.classList.add('today');
 
         div.innerHTML = `<strong>${d}</strong>`;
@@ -205,3 +197,4 @@
   </script>
 </body>
 </html>
+
