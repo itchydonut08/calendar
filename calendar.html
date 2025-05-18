@@ -281,7 +281,11 @@ eventBars.forEach(({ start, length, title }) => {
     bar.style.gridColumn = `${gridIndex + 1} / span ${length}`;
     bar.style.position = "absolute";
     bar.style.top = "18px";
-    cells[gridIndex].appendChild(bar);
+    bar.style.gridColumnStart = gridIndex + 1;
+    bar.style.gridColumnEnd = `span ${length}`;
+    bar.style.gridRow = "2";
+    bar.style.position = "relative";
+    days.appendChild(bar);
   }
 });
 
@@ -335,4 +339,5 @@ eventBars.forEach(({ start, length, title }) => {
   </script>
 </body>
 </html>
+
 
