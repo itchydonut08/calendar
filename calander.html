@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>3-Month Vertical Calendar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://apis.google.com/js/api.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .calendar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .calendar {
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .calendar h2 {
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .day-names, .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+    }
+
+    .day-names div {
+      font-weight: bold;
+      padding: 5px 0;
+    }
+
+    .days div {
+      padding: 5px 0;
+      font-size: 12px;
+    }
+
+    .days div.empty {
+      visibility: hidden;
+    }
+
+    .days div.today {
+      background: #007bff;
+      color: white;
+      border-radius: 50%;
+    }
+
+    .days div.event-day {
+      background: #ffc107;
+      border-radius: 4px;
+      padding: 2px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Your 3-Month Calendar</h1>
+  <div class="calendar-container" id="calendarContainer"></div>
+
+  <script>
+    // Redirect to sign-in page if not logged in
+    const token = localStorage.getItem('google_token');
+    if (!token) {
+      window.location.href = 'index.html';
+    }
+
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"];
+    const calendarContainer = document.getElementById('calendarContainer');
+    const allEvents = [];
+
+    // Load Google Calendar API
+    gapi.load('client', async () => {
+      await gapi.client.init({
+        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
+      });
+
+      gapi.client.setToken({ access_token: token });
+
+      try {
+        const res = await gapi.client.calendar.events.list({
+          calendarId: 'primary',
+          timeMin: new Date().toISOString(),
+          maxResults: 100,
+          singleEvents: true,
+          orderBy: 'startTime'
+        });
+
+        const now = new Date();
+        const threeMonthsFromNow = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+
+        res.result.items.forEach(event => {
+          const start = new Date(event.start.date || event.start.dateTime);
+          const end = new Date(event.end.date || event.end.dateTime);
+          const durationMs = end - start;
+          const oneDayMs = 24 * 60 * 60 * 1000;
+
+          if (durationMs >= oneDayMs) {
+            if (start >= now && start <= threeMonthsFromNow) {
+              allEvents.push({ date: start.toDateString(), summary: event.summary });
+            }
+          }
+        });
+
+        for (let i = 0; i < 3; i++) {
+          renderCalendar(i);
+        }
+
+      } catch (err) {
+        console.error("Failed to fetch events:", err);
+        alert("Failed to load your calendar. You may need to re-login.");
+        localStorage.removeItem('google_token');
+        window.location.href = 'index.html';
+      }
+    });
+
+    function renderCalendar(monthOffset) {
+      const today = new Date();
+      const date = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const lastDate = new Date(year, month + 1, 0).getDate();
+
+      const calendarDiv = document.createElement("div");
+      calendarDiv.className = "calendar";
+      calendarDiv.innerHTML = `<h2>${monthNames[month]} ${year}</h2>
+        <div class="day-names">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>`;
+
+      const daysDiv = document.createElement("div");
+      daysDiv.className = "days";
+
+      for (let i = 0; i < firstDay; i++) {
+        daysDiv.innerHTML += `<div class="empty">-</div>`;
+      }
+
+      for (let d = 1; d <= lastDate; d++) {
+        const dayDate = new Date(year, month, d);
+        const isToday = dayDate.toDateString() === (new Date()).toDateString();
+        const hasEvent = allEvents.some(e => e.date === dayDate.toDateString());
+
+        let className = '';
+        if (isToday) className = 'today';
+        else if (hasEvent) className = 'event-day';
+
+        daysDiv.innerHTML += `<div class="${className}">${d}</div>`;
+      }
+
+      calendarDiv.appendChild(daysDiv);
+      calendarContainer.appendChild(calendarDiv);
+    }
+  </script>
+</body>
+</html>
