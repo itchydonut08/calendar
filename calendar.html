@@ -63,11 +63,8 @@
       });
 
       gapi.load("client", () => {
-        const existing = localStorage.getItem("gmail_token");
-        if (!existing) {
-          tokenClient.requestAccessToken();
-        } else {
-          gapi.client.setToken({ access_token: existing });
+        tokenClient.requestAccessToken();
+      });
           loadEvents().then(() => {
             for (let i = 0; i < 3; i++) renderCalendar(i);
           });
