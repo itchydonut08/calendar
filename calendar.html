@@ -175,8 +175,17 @@
   <script>
     async function loadEvents() {
       await gapi.client.init({
-        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
-      });
+  apiKey: "AIzaSyAXLti1KtAGyp3VtRT4bKg7tVQJTj-o_P8",
+  clientId: "530875477700-s2ebm4u8qcm0dhgq78kk16r6loaab0t2.apps.googleusercontent.com",
+  discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+  scope: "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/gmail.send"
+});
+
+await gapi.auth2.getAuthInstance().signIn();
+const token = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+localStorage.setItem("gmail_token", token);
+
+
       gapi.client.setToken({ access_token: token });
       const res = await gapi.client.calendar.events.list({
         calendarId: 'primary',
