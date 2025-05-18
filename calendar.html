@@ -101,20 +101,19 @@
     }
 
     .event-bar {
-  position: absolute;
-  bottom: 2px;
-  left: 2px;
-  right: 2px;
-  height: 14px;
   background-color: #cce5ff;
   border-radius: 4px;
   font-size: 0.6rem;
   line-height: 14px;
-  padding: 0 4px;
-  overflow: hidden;
+  padding: 0 6px;
   white-space: nowrap;
   text-overflow: ellipsis;
-  z-index: 0;
+  overflow: hidden;
+  height: 14px;
+  margin-top: 2px;
+  align-self: end;
+  justify-self: start;
+  z-index: 1;
     }
 
     .topbar {
@@ -267,10 +266,9 @@ Object.values(eventBars).forEach(({ start, length }, index) => {
   if (gridIndex >= 0 && gridIndex < cells.length) {
     const bar = document.createElement("div");
     bar.className = "event-bar";
-    bar.style.top = "18px";
-    bar.style.left = "2px";
-    bar.style.right = "2px";
-    bar.style.width = `calc(${length * 100}% - 4px)`;
+    bar.style.gridColumnStart = gridIndex + 1;
+    bar.style.gridColumnEnd = `span ${length}`;
+    bar.style.position = "relative";
     bar.textContent = Object.keys(eventBars)[index];
     cells[gridIndex].appendChild(bar);
   }
@@ -326,4 +324,3 @@ Object.values(eventBars).forEach(({ start, length }, index) => {
   </script>
 </body>
 </html>
-
