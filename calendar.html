@@ -213,6 +213,12 @@
   <div class="calendar-container" id="calendarContainer"></div>
   <script>
     async function loadEvents() {
+      const token = localStorage.getItem("gmail_token");
+      if (!token) {
+        console.warn("No access token available for Google Calendar.");
+        return;
+      }
+      gapi.client.setToken({ access_token: token });
       // No need to re-init client here since it's already loaded above
       const token = localStorage.getItem("gmail_token");
       gapi.client.setToken({ access_token: token });
