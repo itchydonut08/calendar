@@ -85,11 +85,7 @@
     });
 
     async function loadEvents() {
-      await gapi.client.init({
-        apiKey: 'AIzaSyAXLti1KtAGyp3VtRT4bKg7tVQJTj-o_P8',
-        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest']
-      });
-      await gapi.client.load('calendar', 'v3');
+            await gapi.client.load('calendar', 'v3');
       await gapi.client.load('calendar', 'v3');
       const token = localStorage.getItem("gmail_token");
       if (!token) {
