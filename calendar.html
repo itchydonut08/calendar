@@ -13,14 +13,16 @@
       background: #f0f0f0;
       display: flex;
       justify-content: center;
-    }
+      overflow-x: auto;
+}
 
     .calendar-container {
       display: flex;
+      flex-direction: row;
       gap: 20px;
-      width: 100%;
-      max-width: 1500px;
+      min-width: 1500px; /* This forces all calendars to fit side by side */
     }
+
 
     .calendar {
       flex: 1;
