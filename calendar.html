@@ -245,45 +245,19 @@
         cells.push(cell);
       }
 
-      // render smooth multi-day event bars
-const eventBars = [];
-const seen = new Set();
-
-Object.entries(eventsByDate).forEach(([dateStr, titles]) => {
-  const startDate = new Date(dateStr);
-  const title = titles[0];
-  const key = title + startDate.toDateString();
-
-  if (!seen.has(key)) {
-    let length = 1;
-    let cursor = new Date(startDate);
-    cursor.setDate(cursor.getDate() + 1);
-    while (eventsByDate[cursor.toDateString()]?.includes(title)) {
-      length++;
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    eventBars.push({ title, start: startDate, length });
-    seen.add(key);
-  }
-});
-
-const startOfMonth = new Date(year, month, 1);
-const dayOffsetBase = startOfMonth.getDay();
-
-const grid = days;
-eventBars.forEach(({ start, length, title }) => {
-  const offset = Math.floor((start - startOfMonth) / (1000 * 60 * 60 * 24));
-  const gridIndex = offset + dayOffsetBase;
-  if (gridIndex >= 0 && gridIndex < cells.length) {
-    const bar = document.createElement("div");
-    bar.className = "event-bar";
-    bar.textContent = title;
-    bar.style.gridColumn = `${gridIndex + 1} / span ${length}`;
-    bar.style.top = "18px";
-    
-    days.appendChild(bar);
-  }
-});
+            // render one-per-day boxes for multi-day events
+      Object.entries(eventsByDate).forEach(([dateStr, titles]) => {
+        const dateObj = new Date(dateStr);
+        if (dateObj.getFullYear() === year && dateObj.getMonth() === month) {
+          const dayIndex = dateObj.getDate() + firstDay - 1;
+          titles.forEach(title => {
+            const tag = document.createElement("div");
+            tag.className = "event-bar";
+            tag.textContent = title;
+            cells[dayIndex]?.appendChild(tag);
+          });
+        }
+      });
 
       cal.appendChild(days);
       calendarContainer.appendChild(cal);
@@ -335,6 +309,7 @@ eventBars.forEach(({ start, length, title }) => {
   </script>
 </body>
 </html>
+
 
 
 
