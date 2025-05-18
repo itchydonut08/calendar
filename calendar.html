@@ -175,11 +175,20 @@
       });
 
       res.result.items.forEach(event => {
-        const date = new Date(event.start.date || event.start.dateTime);
-        const key = date.toDateString();
-        if (!eventsByDate[key]) eventsByDate[key] = [];
-        eventsByDate[key].push(event.summary);
-      });
+  const start = new Date(event.start.date || event.start.dateTime);
+  const end = new Date(event.end.date || event.end.dateTime);
+  const title = event.summary;
+
+  // Handle multi-day ranges
+  let current = new Date(start);
+  while (current <= end) {
+    const key = current.toDateString();
+    if (!eventsByDate[key]) eventsByDate[key] = [];
+    eventsByDate[key].push(title);
+
+    current.setDate(current.getDate() + 1);
+  }
+});
     }
     const token = localStorage.getItem("gmail_token");
     const monthNames = ["January", "February", "March", "April", "May", "June",
@@ -296,3 +305,4 @@ const eventsByDate = {}; // store events by date
   </script>
 </body>
 </html>
+
