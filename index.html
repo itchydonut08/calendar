@@ -47,27 +47,37 @@
     }
 
     function initClient() {
-      gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        discoveryDocs: DISCOVERY_DOCS,
-        scope: SCOPES
-      }).then(() => {
-        const authInstance = gapi.auth2.getAuthInstance();
-        const signedIn = authInstance.isSignedIn.get();
+  gapi.client.init({
+    apiKey: API_KEY,
+    clientId: CLIENT_ID,
+    discoveryDocs: DISCOVERY_DOCS,
+    scope: SCOPES
+  }).then(() => {
+    const authInstance = gapi.auth2.getAuthInstance();
+    const signedIn = authInstance.isSignedIn.get();
 
-        updateSigninStatus(signedIn);
-        authInstance.isSignedIn.listen(updateSigninStatus);
+    updateSigninStatus(signedIn);
+    authInstance.isSignedIn.listen(updateSigninStatus);
 
-        if (localStorage.getItem('gapi_signed_in') === 'true' && !signedIn) {
-          authInstance.signIn(); // try to silently restore session
-        }
-
-        if (signedIn) {
-          localStorage.setItem('gapi_signed_in', 'true');
-        }
+    // Try to restore session
+    if (localStorage.getItem('gapi_signed_in') === 'true' && !signedIn) {
+      console.log("Trying silent sign-in...");
+      authInstance.signIn().then(() => {
+        console.log("Signed in silently");
+        localStorage.setItem('gapi_signed_in', 'true');
+      }).catch(err => {
+        console.error("Silent sign-in failed:", err);
       });
     }
+
+    if (signedIn) {
+      localStorage.setItem('gapi_signed_in', 'true');
+    }
+  }).catch(error => {
+    console.error("Google API init error:", error);
+  });
+}
+
 
     function listUpcomingEvents() {
       gapi.client.calendar.events.list({
