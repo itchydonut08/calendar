@@ -17,12 +17,13 @@
             const tokenClient = google.accounts.oauth2.initTokenClient({
               client_id: '530875477700-s2ebm4u8qcm0dhgq78kk16r6loaab0t2.apps.googleusercontent.com',
               scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/gmail.send',
-              callback: (response) => {
+              callback: async (response) => {
                 if (response.error) {
                   console.error('Token error:', response);
                   return;
                 }
                 localStorage.setItem('gmail_token', response.access_token);
+                gapi.client.setToken({ access_token: response.access_token });
                 initCalendar();
               }
             });
@@ -339,3 +340,4 @@
   </script>
 </body>
 </html>
+
