@@ -47,13 +47,13 @@
       flex-direction: column;
       gap: 10px;
       width: 100%;
-      max-width: 600px;
+      max-width: 550px;
     }
 
     .calendar {
       background: var(--card-bg);
       border-radius: 12px;
-      padding: 12px;
+      padding: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
       transition: box-shadow 0.3s ease;
     }
@@ -77,13 +77,13 @@
     .day-names div {
       font-weight: 600;
       padding: 4px 0;
-      font-size: 0.7rem;
+      font-size: 0.6rem;
       color: var(--text-color);
     }
 
     .days div {
       border: 1px solid var(--border-color);
-      min-height: 40px;
+      min-height: 30px;
       padding: 2px;
       font-size: 0.7rem;
     }
@@ -166,7 +166,7 @@
     const today = new Date();
     const calendarContainer = document.getElementById("calendarContainer");
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       renderCalendar(i);
     }
 
@@ -255,6 +255,7 @@
   </script>
 </body>
 </html>
+
 
 
 
