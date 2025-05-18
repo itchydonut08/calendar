@@ -113,114 +113,22 @@
           return;
         }
 
-        res.result.items.forEach(event => {
+                res.result.items.forEach(event => {
           if (!event.start || !event.end || !event.summary || event.eventType === 'task') return;
-          const start = new Date(event.start.date || event.start.dateTime);
-          const end = new Date(event.end.date || event.end.dateTime);
+
+          const isAllDay = event.start.date && event.end.date;
+          const start = new Date(event.start.dateTime || event.start.date);
+          const end = new Date(event.end.dateTime || event.end.date);
+          const spansMultipleDays = (end - start) >= 24 * 60 * 60 * 1000;
+          if (!isAllDay && !spansMultipleDays) return;
+
           const title = event.summary;
           let current = new Date(start);
           while (current <= end) {
             const key = current.toDateString();
             if (!eventsByDate[key]) eventsByDate[key] = [];
-            eventsByDate[key].push(title);
+
+                        eventsByDate[key].push(title);
             current.setDate(current.getDate() + 1);
           }
         });
-      } catch (error) {
-        console.error("An error occurred while loading events:", error);
-      }
-    }
-
-    function renderCalendar(offset) {
-      const date = new Date(today.getFullYear(), today.getMonth() + offset, 1);
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const firstDay = new Date(year, month, 1).getDay();
-      const lastDate = new Date(year, month + 1, 0).getDate();
-
-      const cal = document.createElement("div");
-      cal.className = "calendar";
-      cal.innerHTML = `<h2>${monthNames[month]} ${year}</h2><div class="day-names">
-        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>`;
-
-      const days = document.createElement("div");
-      days.className = "days";
-      let cells = [];
-
-      for (let i = 0; i < firstDay; i++) {
-        const empty = document.createElement("div");
-        empty.className = "empty";
-        days.appendChild(empty);
-        cells.push(empty);
-      }
-
-      for (let d = 1; d <= lastDate; d++) {
-        const cell = document.createElement("div");
-        const dateObj = new Date(year, month, d);
-        const dateStr = dateObj.toDateString();
-        if (dateStr === today.toDateString()) cell.classList.add("today");
-        cell.innerHTML = `<strong>${d}</strong>`;
-        days.appendChild(cell);
-        cells.push(cell);
-      }
-
-      Object.entries(eventsByDate).forEach(([dateStr, titles]) => {
-        const dateObj = new Date(dateStr);
-        if (dateObj.getFullYear() === year && dateObj.getMonth() === month) {
-          const dayIndex = dateObj.getDate() + firstDay - 1;
-          titles.forEach(title => {
-            const tag = document.createElement("div");
-            tag.className = "event-bar";
-            tag.textContent = title;
-            cells[dayIndex]?.appendChild(tag);
-          });
-        }
-      });
-
-      cal.appendChild(days);
-      calendarContainer.appendChild(cal);
-    }
-
-    function toggleForm() {
-      const form = document.getElementById("emailForm");
-      form.style.display = form.style.display === "none" ? "flex" : "none";
-    }
-
-    async function sendEmail() {
-      const token = localStorage.getItem("gmail_token");
-      const email = document.getElementById("toEmail").value;
-      if (!email) return alert("Enter an email address");
-      const container = document.getElementById("calendarContainer");
-      const canvas = await html2canvas(container);
-      const imgData = canvas.toDataURL("image/png");
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF();
-      const props = pdf.getImageProperties(imgData);
-      const width = 210;
-      const height = (props.height * width) / props.width;
-      pdf.addImage(imgData, "PNG", 0, 0, width, height);
-      const pdfBlob = pdf.output("blob");
-      const reader = new FileReader();
-      reader.onloadend = function () {
-        const base64Data = reader.result.split(',')[1];
-        gapi.load("client", async () => {
-          await gapi.client.init({ discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest"] });
-          gapi.client.setToken({ access_token: token });
-          const raw = btoa(
-            `To: ${email}\r\n` +
-            `Subject: Your Calendar PDF\r\n` +
-            `MIME-Version: 1.0\r\n` +
-            `Content-Type: multipart/mixed; boundary="boundary"\r\n\r\n` +
-            `--boundary\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nHere is your calendar.\r\n\r\n` +
-            `--boundary\r\nContent-Type: application/pdf\r\nContent-Disposition: attachment; filename="calendar.pdf"\r\nContent-Transfer-Encoding: base64\r\n\r\n${base64Data}\r\n--boundary--`
-          ).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-          gapi.client.gmail.users.messages.send({ userId: "me", resource: { raw } })
-            .then(() => alert("Email sent!"))
-            .catch(err => { console.error(err); alert("Failed to send email."); });
-        });
-      };
-      reader.readAsDataURL(pdfBlob);
-    }
-  </script>
-</body>
-</html>
