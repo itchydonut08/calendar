@@ -160,37 +160,80 @@
   <div class="calendar-container" id="calendarContainer"></div>
 
   <script>
+    async function loadEvents() {
+      await gapi.client.init({
+        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
+      });
+      gapi.client.setToken({ access_token: token });
+
+      const res = await gapi.client.calendar.events.list({
+        calendarId: 'primary',
+        timeMin: new Date().toISOString(),
+        timeMax: new Date(today.getFullYear(), today.getMonth() + 3, 1).toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime'
+      });
+
+      res.result.items.forEach(event => {
+        const date = new Date(event.start.date || event.start.dateTime);
+        const key = date.toDateString();
+        if (!eventsByDate[key]) eventsByDate[key] = [];
+        eventsByDate[key].push(event.summary);
+      });
+    }
     const token = localStorage.getItem("gmail_token");
     const monthNames = ["January", "February", "March", "April", "May", "June",
                         "July", "August", "September", "October", "November", "December"];
     const today = new Date();
     const calendarContainer = document.getElementById("calendarContainer");
+const eventsByDate = {}; // store events by date
 
-    for (let i = 0; i < 3; i++) {
-      renderCalendar(i);
-    }
+    gapi.load("client", async () => {
+  await loadEvents();
+  for (let i = 0; i < 3; i++) renderCalendar(i);
+});
 
     function renderCalendar(offset) {
-      const date = new Date(today.getFullYear(), today.getMonth() + offset, 1);
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const firstDay = new Date(year, month, 1).getDay();
-      const lastDate = new Date(year, month + 1, 0).getDate();
+  const date = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month + 1, 0).getDate();
 
-      const cal = document.createElement("div");
-      cal.className = "calendar";
-      cal.innerHTML = `<h2>${monthNames[month]} ${year}</h2><div class="day-names">
-        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>`;
+  const cal = document.createElement("div");
+  cal.className = "calendar";
+  cal.innerHTML = `<h2>${monthNames[month]} ${year}</h2><div class="day-names">
+    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>`;
 
-      const days = document.createElement("div");
-      days.className = "days";
+  const days = document.createElement("div");
+  days.className = "days";
 
-      for (let i = 0; i < firstDay; i++) days.innerHTML += '<div class="empty"></div>';
-      for (let d = 1; d <= lastDate; d++) {
-        const dateStr = new Date(year, month, d).toDateString();
-        const isToday = dateStr === today.toDateString();
-        days.innerHTML += `<div class="${isToday ? 'today' : ''}">${d}</div>`;
-      }
+  for (let i = 0; i < firstDay; i++) days.innerHTML += '<div class="empty"></div>';
+  for (let d = 1; d <= lastDate; d++) {
+    const cell = document.createElement("div");
+    const dateObj = new Date(year, month, d);
+    const dateStr = dateObj.toDateString();
+    if (dateStr === today.toDateString()) cell.classList.add("today");
+
+    cell.innerHTML = `<strong>${d}</strong>`;
+    if (eventsByDate[dateStr]) {
+      eventsByDate[dateStr].forEach(ev => {
+        const tag = document.createElement("div");
+        tag.style.fontSize = "0.6rem";
+        tag.style.marginTop = "2px";
+        tag.style.background = "#cce5ff";
+        tag.style.borderRadius = "4px";
+        tag.style.padding = "1px 3px";
+        tag.textContent = ev;
+        cell.appendChild(tag);
+      });
+    }
+    days.appendChild(cell);
+  }
+
+  cal.appendChild(days);
+  calendarContainer.appendChild(cal);
+}
 
       cal.appendChild(days);
       calendarContainer.appendChild(cal);
@@ -255,6 +298,7 @@
   </script>
 </body>
 </html>
+
 
 
 
