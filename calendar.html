@@ -1,217 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Calendar</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar PDF Sender</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://apis.google.com/js/api.js" async defer></script>
-  <script>
-    let gapiReady = false;
-    window.addEventListener("load", () => {
-      const interval = setInterval(() => {
-        if (typeof gapi !== "undefined") {
-          clearInterval(interval);
-          gapi.load("client", () => {
-            gapiReady = true;
-            const tokenClient = google.accounts.oauth2.initTokenClient({
-              client_id: '530875477700-s2ebm4u8qcm0dhgq78kk16r6loaab0t2.apps.googleusercontent.com',
-              scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/gmail.send',
-              callback: async (response) => {
-                if (response.error) {
-                  console.error('Token error:', response);
-                  return;
-                }
-                localStorage.setItem('gmail_token', response.access_token);
-                gapi.client.setToken({ access_token: response.access_token });
-                initCalendar();
-              }
-            });
-
-            const existing = localStorage.getItem("gmail_token");
-            if (!existing) {
-              tokenClient.requestAccessToken();
-            } else {
-              initCalendar();
-            }
-          });
-        }
-      }, 100);
-    });
-
-    async function initCalendar() {
-      await loadEvents();
-      for (let i = 0; i < 3; i++) renderCalendar(i);
-    }
-  </script>
+  <script src="https://apis.google.com/js/api.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    :root {
-      --bg-color: #f8f9fa;
-      --text-color: #202124;
-      --card-bg: white;
-      --border-color: #dadce0;
-      --today-border: #1a73e8;
-      --btn-bg: #1a73e8;
-      --btn-bg-hover: #155ab6;
-      --input-bg: white;
-    }
-
-    body.dark {
-      --bg-color: #202124;
-      --text-color: #e8eaed;
-      --card-bg: #303134;
-      --border-color: #5f6368;
-      --today-border: #8ab4f8;
-      --btn-bg: #8ab4f8;
-      --btn-bg-hover: #669df6;
-      --input-bg: #3c4043;
-    }
-
-    body {
-      margin: 0;
-      font-family: "Google Sans", Roboto, sans-serif;
-      background: var(--bg-color);
-      color: var(--text-color);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 10px;
-      transition: background 0.3s ease, color 0.3s ease;
-    }
-
-    .calendar-container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: 100%;
-      max-width: 550px;
-    }
-
-    .calendar {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-      transition: box-shadow 0.3s ease;
-    }
-
-    .calendar:hover {
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-
-    .calendar h2 {
-      text-align: center;
-      font-size: 1.1rem;
-      margin-bottom: 8px;
-    }
-
-    .day-names, .days {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      text-align: center;
-      position: relative;
-    }
-
-    .day-names div {
-      font-weight: 600;
-      padding: 4px 0;
-      font-size: 0.6rem;
-      color: var(--text-color);
-    }
-
-    .days div {
-      border: 1px solid var(--border-color);
-      min-height: 30px;
-      padding: 2px;
-      font-size: 0.7rem;
-      position: relative;
-    }
-
-    .days div.empty {
-      background: #e0e0e0;
-      border: none;
-    }
-
-    .days div.today {
-      border: 2px solid var(--today-border);
-      border-radius: 4px;
-    }
-
-    .event-bar {
-      background-color: #cce5ff;
-      border-radius: 6px;
-      font-size: 0.7rem;
-      margin-top: 4px;
-      padding: 6px 4px;
-      width: 100%;
-      box-sizing: border-box;
-      text-align: center;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .topbar {
-      width: 100%;
-      max-width: 600px;
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    button {
-      padding: 6px 12px;
-      font-size: 0.85rem;
-      background-color: var(--btn-bg);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s ease;
-      font-weight: 500;
-    }
-
-    button:hover {
-      background-color: var(--btn-bg-hover);
-    }
-
-    #emailForm {
-      display: none;
-      margin-top: 10px;
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      align-items: center;
-      width: 100%;
-      max-width: 600px;
-    }
-
-    input[type="email"] {
-      padding: 6px 10px;
-      font-size: 0.85rem;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      outline: none;
-      flex: 1;
-      max-width: 250px;
-      background: var(--input-bg);
-      color: var(--text-color);
-    }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 1rem; background: #f0f2f5; color: #333; }
+    .calendar-container { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+    .calendar { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 800px; width: 100%; }
+    .calendar h2 { text-align: center; margin-bottom: 0.5rem; }
+    .day-names, .days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+    .day-names div { font-weight: bold; }
+    .days div { border: 1px solid #ddd; padding: 0.25rem; min-height: 60px; position: relative; }
+    .today { border: 2px solid #007bff !important; }
+    .event-bar { background-color: #cce5ff; border-radius: 6px; font-size: 0.7rem; margin-top: 4px; padding: 6px 4px; width: 100%; box-sizing: border-box; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    button { padding: 6px 12px; font-size: 0.9rem; border: none; border-radius: 4px; background: #007bff; color: white; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    #emailForm { display: none; gap: 0.5rem; margin-top: 1rem; }
+    input[type="email"] { padding: 6px; font-size: 1rem; width: 250px; }
   </style>
 </head>
 <body>
   <div class="topbar">
     <button onclick="toggleForm()">📤 Send PDF</button>
-    <button onclick="toggleTheme()">🌓 Toggle Theme</button>
   </div>
-  <div id="emailForm" style="display: none;">
+  <div id="emailForm">
     <input type="email" id="toEmail" placeholder="Recipient email" />
     <button onclick="sendEmail()">Send</button>
   </div>
   <div class="calendar-container" id="calendarContainer"></div>
   <script>
+    const eventsByDate = {};
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const today = new Date();
+    const calendarContainer = document.getElementById("calendarContainer");
+
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: '530875477700-s2ebm4u8qcm0dhgq78kk16r6loaab0t2.apps.googleusercontent.com',
+      scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/gmail.send',
+      callback: async (response) => {
+        if (response.error) {
+          console.error('Token error:', response);
+          return;
+        }
+        const token = response.access_token;
+        localStorage.setItem('gmail_token', token);
+        gapi.client.setToken({ access_token: token });
+        await loadEvents();
+        for (let i = 0; i < 3; i++) renderCalendar(i);
+      }
+    });
+
+    window.onload = () => {
+      gapi.load("client", () => {
+        const existing = localStorage.getItem("gmail_token");
+        if (!existing) {
+          tokenClient.requestAccessToken();
+        } else {
+          gapi.client.setToken({ access_token: existing });
+          loadEvents().then(() => {
+            for (let i = 0; i < 3; i++) renderCalendar(i);
+          });
+        }
+      });
+    };
+
     async function loadEvents() {
       const token = localStorage.getItem("gmail_token");
       if (!token) {
@@ -219,49 +77,38 @@
         return;
       }
       gapi.client.setToken({ access_token: token });
-      // No need to re-init client here since it's already loaded above
-      gapi.client.setToken({ access_token: token });
       let res;
       try {
         res = await gapi.client.calendar.events.list({
-  calendarId: 'primary',
-  timeMin: new Date().toISOString(),
-  timeMax: new Date(new Date().getFullYear(), new Date().getMonth() + 3, 1).toISOString(),
-  singleEvents: true,
-  orderBy: 'startTime'
-});
-
-if (!res || !res.result || !Array.isArray(res.result.items)) {
-  console.warn("Unexpected API response:", res);
-  return;
-}
+          calendarId: 'primary',
+          timeMin: new Date().toISOString(),
+          timeMax: new Date(new Date().getFullYear(), new Date().getMonth() + 3, 1).toISOString(),
+          singleEvents: true,
+          orderBy: 'startTime'
+        });
+        if (!res || !res.result || !Array.isArray(res.result.items)) {
+          console.warn("Unexpected API response:", res);
+          return;
+        }
       } catch (err) {
         console.error("Failed to load calendar events:", err);
         return;
       }
-      if (res.result && Array.isArray(res.result.items)) {
-        res.result.items.forEach(event => {
-  if (!event.start || !event.end || !event.summary || event.eventType === 'task') return;
-  const start = new Date(event.start.date || event.start.dateTime);
-  const end = new Date(event.end.date || event.end.dateTime);
-  const title = event.summary;
-  let current = new Date(start);
-  while (current <= end) {
-    const key = current.toDateString();
-    if (!eventsByDate[key]) eventsByDate[key] = [];
-    eventsByDate[key].push(title);
-    current.setDate(current.getDate() + 1);
-  }
-});
-      } else {
-        console.warn("No valid events found.", res.result);
-      }
-    }
 
-    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const today = new Date();
-    const calendarContainer = document.getElementById("calendarContainer");
-    const eventsByDate = {};
+      res.result.items.forEach(event => {
+        if (!event.start || !event.end || !event.summary || event.eventType === 'task') return;
+        const start = new Date(event.start.date || event.start.dateTime);
+        const end = new Date(event.end.date || event.end.dateTime);
+        const title = event.summary;
+        let current = new Date(start);
+        while (current <= end) {
+          const key = current.toDateString();
+          if (!eventsByDate[key]) eventsByDate[key] = [];
+          eventsByDate[key].push(title);
+          current.setDate(current.getDate() + 1);
+        }
+      });
+    }
 
     function renderCalendar(offset) {
       const date = new Date(today.getFullYear(), today.getMonth() + offset, 1);
@@ -316,10 +163,6 @@ if (!res || !res.result || !Array.isArray(res.result.items)) {
     function toggleForm() {
       const form = document.getElementById("emailForm");
       form.style.display = form.style.display === "none" ? "flex" : "none";
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle("dark");
     }
 
     async function sendEmail() {
