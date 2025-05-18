@@ -1,114 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GIS Calendar Integration</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Send from Gmail</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js"></script>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    button { padding: 10px 20px; margin: 10px 0; }
-  </style>
-</head>
-<body>
-  <h1>Google Calendar via GIS</h1>
-  <div id="g_id_onload"
-       data-client_id="530875477700-s2ebm4u8qcm0dhgq78kk16r6loaab0t2.apps.googleusercontent.com"
-       data-auto_prompt="false"
-       data-callback="handleCredentialResponse">
-  </div>
-
-  <div class="g_id_signin"
-       data-type="standard"
-       data-shape="pill"
-       data-theme="outline"
-       data-text="signin_with"
-       data-size="large">
-  </div>
-
-  <button onclick="signOut()">Sign Out</button>
-  <div id="events"></div>
-
   <script>
+    const CLIENT_ID = "530875477700-s2ebm4u8qcm0dhgq78kk16r6loaab0t2.apps.googleusercontent.com";
+    const SCOPES = "https://www.googleapis.com/auth/gmail.send";
+
     let tokenClient;
-    let gapiInited = false;
-    let gisInited = false;
-    const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
-    const CLIENT_ID = '530875477700-s2ebm4u8qcm0dhgq78kk16r6loaab0t2.apps.googleusercontent.com';
-
-    function gapiLoaded() {
-      gapi.load('client', initializeGapiClient);
-    }
-
-    async function initializeGapiClient() {
-      await gapi.client.init({
-        apiKey: '', // Not needed
-        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-      });
-      gapiInited = true;
-    }
 
     window.onload = () => {
-      gapiLoaded();
-
       tokenClient = google.accounts.oauth2.initTokenClient({
-  client_id: CLIENT_ID,
-  scope: SCOPES,
-  callback: async (tokenResponse) => {
-    if (tokenResponse.error) {
-      console.error('Token error', tokenResponse);
-      return;
-    }
-    localStorage.setItem('google_token', tokenResponse.access_token);
-    
-    // ✅ REDIRECT AFTER SUCCESSFUL LOGIN
-    window.location.href = 'calendar.html';
-  }
-});
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (tokenResponse) => {
+          if (tokenResponse.error) return alert("Auth error.");
+          localStorage.setItem("gmail_token", tokenResponse.access_token);
+          alert("Signed in. Ready to send email.");
+        }
+      });
 
-
-      const existingToken = localStorage.getItem('google_token');
-      if (existingToken) {
-        gapi.auth.setToken({access_token: existingToken});
-        listEvents();
-      }
+      document.getElementById("signin").onclick = () => tokenClient.requestAccessToken();
+      document.getElementById("sendBtn").onclick = sendEmail;
     };
 
-    function handleCredentialResponse(response) {
-      tokenClient.requestAccessToken();
+    function base64UrlEncode(str) {
+      return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     }
 
-    async function listEvents() {
-      try {
-        const res = await gapi.client.calendar.events.list({
-          calendarId: 'primary',
-          timeMin: (new Date()).toISOString(),
-          showDeleted: false,
-          singleEvents: true,
-          maxResults: 5,
-          orderBy: 'startTime'
+    async function sendEmail() {
+      const token = localStorage.getItem("gmail_token");
+      if (!token) return alert("Please sign in first.");
+
+      const to = document.getElementById("to").value;
+      const subject = "3-Month Calendar";
+      const message = "Here is your calendar PDF attachment (not included in this example).";
+
+      const mimeMessage =
+        `To: ${to}\r\n` +
+        `Subject: ${subject}\r\n` +
+        `Content-Type: text/plain; charset=UTF-8\r\n\r\n` +
+        `${message}`;
+
+      const raw = base64UrlEncode(mimeMessage);
+
+      gapi.load("client", async () => {
+        await gapi.client.init({
+          apiKey: "", // not needed for OAuth
+          discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest"],
         });
 
-        const events = res.result.items;
-        const output = document.getElementById('events');
-        output.innerHTML = "<h3>Upcoming Events:</h3>";
-        if (!events.length) {
-          output.innerHTML += "<p>No events found.</p>";
-        } else {
-          events.forEach(e => {
-            output.innerHTML += `<p><strong>${e.summary}</strong> - ${e.start.dateTime || e.start.date}</p>`;
-          });
-        }
-      } catch (err) {
-        console.error(err);
-        localStorage.removeItem('google_token');
-      }
-    }
+        gapi.client.setToken({ access_token: token });
 
-    function signOut() {
-      localStorage.removeItem('google_token');
-      location.reload();
+        gapi.client.gmail.users.messages.send({
+          userId: "me",
+          resource: { raw: raw }
+        }).then(() => {
+          alert("Email sent!");
+        }).catch(err => {
+          console.error(err);
+          alert("Failed to send email.");
+        });
+      });
     }
   </script>
+</head>
+<body>
+  <h2>Send Email From Your Gmail</h2>
+  <button id="signin">Sign in with Google</button><br><br>
+  <input type="email" id="to" placeholder="Recipient email" /><br>
+  <button id="sendBtn">Send Email</button>
 </body>
 </html>
+
