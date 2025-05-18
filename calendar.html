@@ -38,14 +38,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px 20px;
+      padding: 10px;
       transition: background 0.3s ease, color 0.3s ease;
     }
 
     .calendar-container {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 10px;
       width: 100%;
       max-width: 600px;
     }
@@ -53,7 +53,7 @@
     .calendar {
       background: var(--card-bg);
       border-radius: 12px;
-      padding: 16px;
+      padding: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
       transition: box-shadow 0.3s ease;
     }
@@ -64,8 +64,8 @@
 
     .calendar h2 {
       text-align: center;
-      font-size: 1.3rem;
-      margin-bottom: 12px;
+      font-size: 1.1rem;
+      margin-bottom: 8px;
     }
 
     .day-names, .days {
@@ -76,16 +76,16 @@
 
     .day-names div {
       font-weight: 600;
-      padding: 6px 0;
-      font-size: 0.85rem;
+      padding: 4px 0;
+      font-size: 0.7rem;
       color: var(--text-color);
     }
 
     .days div {
       border: 1px solid var(--border-color);
-      min-height: 55px;
-      padding: 4px;
-      font-size: 0.8rem;
+      min-height: 40px;
+      padding: 2px;
+      font-size: 0.7rem;
     }
 
     .days div.empty {
@@ -103,12 +103,12 @@
       max-width: 600px;
       display: flex;
       justify-content: space-between;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
 
     button {
-      padding: 8px 16px;
-      font-size: 0.9rem;
+      padding: 6px 12px;
+      font-size: 0.85rem;
       background-color: var(--btn-bg);
       color: white;
       border: none;
@@ -134,8 +134,8 @@
     }
 
     input[type="email"] {
-      padding: 8px 12px;
-      font-size: 0.9rem;
+      padding: 6px 10px;
+      font-size: 0.85rem;
       border: 1px solid var(--border-color);
       border-radius: 6px;
       outline: none;
@@ -166,7 +166,7 @@
     const today = new Date();
     const calendarContainer = document.getElementById("calendarContainer");
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       renderCalendar(i);
     }
 
@@ -235,22 +235,9 @@
             `To: ${email}\r\n` +
             `Subject: Your Calendar PDF\r\n` +
             `MIME-Version: 1.0\r\n` +
-            `Content-Type: multipart/mixed; boundary="boundary"
-
-` +
-            `--boundary
-Content-Type: text/plain; charset=UTF-8
-
-Here is your calendar.
-
-` +
-            `--boundary
-Content-Type: application/pdf
-Content-Disposition: attachment; filename="calendar.pdf"
-Content-Transfer-Encoding: base64
-
-${base64Data}
---boundary--`
+            `Content-Type: multipart/mixed; boundary="boundary"\r\n\r\n` +
+            `--boundary\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nHere is your calendar.\r\n\r\n` +
+            `--boundary\r\nContent-Type: application/pdf\r\nContent-Disposition: attachment; filename="calendar.pdf"\r\nContent-Transfer-Encoding: base64\r\n\r\n${base64Data}\r\n--boundary--`
           ).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
           gapi.client.gmail.users.messages.send({
@@ -268,6 +255,7 @@ ${base64Data}
   </script>
 </body>
 </html>
+
 
 
 
