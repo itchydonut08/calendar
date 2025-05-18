@@ -219,12 +219,17 @@
       let res;
       try {
         res = await gapi.client.calendar.events.list({
-          calendarId: 'primary',
-          timeMin: new Date().toISOString(),
-          timeMax: new Date(new Date().getFullYear(), new Date().getMonth() + 3, 1).toISOString(),
-          singleEvents: true,
-          orderBy: 'startTime'
-        });
+  calendarId: 'primary',
+  timeMin: new Date().toISOString(),
+  timeMax: new Date(new Date().getFullYear(), new Date().getMonth() + 3, 1).toISOString(),
+  singleEvents: true,
+  orderBy: 'startTime'
+});
+
+if (!res || !res.result || !Array.isArray(res.result.items)) {
+  console.warn("Unexpected API response:", res);
+  return;
+}
       } catch (err) {
         console.error("Failed to load calendar events:", err);
         return;
