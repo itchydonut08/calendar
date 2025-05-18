@@ -220,7 +220,6 @@
       }
       gapi.client.setToken({ access_token: token });
       // No need to re-init client here since it's already loaded above
-      const token = localStorage.getItem("gmail_token");
       gapi.client.setToken({ access_token: token });
       let res;
       try {
@@ -361,3 +360,4 @@ if (!res || !res.result || !Array.isArray(res.result.items)) {
   </script>
 </body>
 </html>
+
