@@ -52,17 +52,20 @@
       gapiLoaded();
 
       tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: async (tokenResponse) => {
-          if (tokenResponse.error) {
-            console.error('Token error', tokenResponse);
-            return;
-          }
-          localStorage.setItem('google_token', tokenResponse.access_token);
-          listEvents();
-        }
-      });
+  client_id: CLIENT_ID,
+  scope: SCOPES,
+  callback: async (tokenResponse) => {
+    if (tokenResponse.error) {
+      console.error('Token error', tokenResponse);
+      return;
+    }
+    localStorage.setItem('google_token', tokenResponse.access_token);
+    
+    // ✅ REDIRECT AFTER SUCCESSFUL LOGIN
+    window.location.href = 'calendar.html';
+  }
+});
+
 
       const existingToken = localStorage.getItem('google_token');
       if (existingToken) {
