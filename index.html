@@ -1,111 +1,111 @@
-<!DOCTYPE html>
+v<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Google Calendar Integration</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GIS Calendar Integration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
     button { padding: 10px 20px; margin: 10px 0; }
-    #calendarEvents { margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h1>Google Calendar Connection</h1>
-  <button id="authorize_button">Sign In with Google</button>
-  <button id="signout_button" style="display:none;">Sign Out</button>
-  <div id="calendarEvents"></div>
+  <h1>Google Calendar via GIS</h1>
+  <div id="g_id_onload"
+       data-client_id="YOUR_CLIENT_ID_HERE"
+       data-auto_prompt="false"
+       data-callback="handleCredentialResponse">
+  </div>
+
+  <div class="g_id_signin"
+       data-type="standard"
+       data-shape="pill"
+       data-theme="outline"
+       data-text="signin_with"
+       data-size="large">
+  </div>
+
+  <button onclick="signOut()">Sign Out</button>
+  <div id="events"></div>
 
   <script>
+    let tokenClient;
+    let gapiInited = false;
+    let gisInited = false;
+    const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
     const CLIENT_ID = '530875477700-s2ebm4u8qcm0dhgq78kk16r6loaab0t2.apps.googleusercontent.com';
-    const API_KEY = ''; // Not required for this example
-    const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
-    const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 
-    const authorizeButton = document.getElementById('authorize_button');
-    const signoutButton = document.getElementById('signout_button');
+    function gapiLoaded() {
+      gapi.load('client', initializeGapiClient);
+    }
 
-    function updateSigninStatus(isSignedIn) {
-      if (isSignedIn) {
-        authorizeButton.style.display = 'none';
-        signoutButton.style.display = 'inline-block';
-        listUpcomingEvents();
-      } else {
-        authorizeButton.style.display = 'inline-block';
-        signoutButton.style.display = 'none';
+    async function initializeGapiClient() {
+      await gapi.client.init({
+        apiKey: '', // Not needed
+        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+      });
+      gapiInited = true;
+    }
+
+    window.onload = () => {
+      gapiLoaded();
+
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: async (tokenResponse) => {
+          if (tokenResponse.error) {
+            console.error('Token error', tokenResponse);
+            return;
+          }
+          localStorage.setItem('google_token', tokenResponse.access_token);
+          listEvents();
+        }
+      });
+
+      const existingToken = localStorage.getItem('google_token');
+      if (existingToken) {
+        gapi.auth.setToken({access_token: existingToken});
+        listEvents();
+      }
+    };
+
+    function handleCredentialResponse(response) {
+      tokenClient.requestAccessToken();
+    }
+
+    async function listEvents() {
+      try {
+        const res = await gapi.client.calendar.events.list({
+          calendarId: 'primary',
+          timeMin: (new Date()).toISOString(),
+          showDeleted: false,
+          singleEvents: true,
+          maxResults: 5,
+          orderBy: 'startTime'
+        });
+
+        const events = res.result.items;
+        const output = document.getElementById('events');
+        output.innerHTML = "<h3>Upcoming Events:</h3>";
+        if (!events.length) {
+          output.innerHTML += "<p>No events found.</p>";
+        } else {
+          events.forEach(e => {
+            output.innerHTML += `<p><strong>${e.summary}</strong> - ${e.start.dateTime || e.start.date}</p>`;
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        localStorage.removeItem('google_token');
       }
     }
 
-    function handleAuthClick() {
-      gapi.auth2.getAuthInstance().signIn();
+    function signOut() {
+      localStorage.removeItem('google_token');
+      location.reload();
     }
-
-    function handleSignoutClick() {
-      gapi.auth2.getAuthInstance().signOut();
-      localStorage.removeItem('gapi_signed_in');
-    }
-
-    function initClient() {
-  gapi.client.init({
-    apiKey: API_KEY,
-    clientId: CLIENT_ID,
-    discoveryDocs: DISCOVERY_DOCS,
-    scope: SCOPES
-  }).then(() => {
-    const authInstance = gapi.auth2.getAuthInstance();
-    const signedIn = authInstance.isSignedIn.get();
-
-    updateSigninStatus(signedIn);
-    authInstance.isSignedIn.listen(updateSigninStatus);
-
-    // Try to restore session
-    if (localStorage.getItem('gapi_signed_in') === 'true' && !signedIn) {
-      console.log("Trying silent sign-in...");
-      authInstance.signIn().then(() => {
-        console.log("Signed in silently");
-        localStorage.setItem('gapi_signed_in', 'true');
-      }).catch(err => {
-        console.error("Silent sign-in failed:", err);
-      });
-    }
-
-    if (signedIn) {
-      localStorage.setItem('gapi_signed_in', 'true');
-    }
-  }).catch(error => {
-    console.error("Google API init error:", error);
-  });
-}
-
-
-    function listUpcomingEvents() {
-      gapi.client.calendar.events.list({
-        calendarId: 'primary',
-        timeMin: (new Date()).toISOString(),
-        showDeleted: false,
-        singleEvents: true,
-        maxResults: 5,
-        orderBy: 'startTime'
-      }).then(response => {
-        const events = response.result.items;
-        const output = document.getElementById('calendarEvents');
-        output.innerHTML = '<h3>Upcoming Events</h3>';
-        if (events.length) {
-          events.forEach(event => {
-            const when = event.start.dateTime || event.start.date;
-            output.innerHTML += `<p><strong>${event.summary}</strong> - ${when}</p>`;
-          });
-        } else {
-          output.innerHTML += '<p>No upcoming events found.</p>';
-        }
-      });
-    }
-
-    gapi.load('client:auth2', initClient);
-
-    authorizeButton.onclick = handleAuthClick;
-    signoutButton.onclick = handleSignoutClick;
   </script>
 </body>
 </html>
