@@ -278,9 +278,10 @@ eventBars.forEach(({ start, length, title }) => {
     const bar = document.createElement("div");
     bar.className = "event-bar";
     bar.textContent = title;
-    bar.style.gridColumnStart = gridIndex + 1;
-    bar.style.gridColumnEnd = `span ${length}`;
-    grid.appendChild(bar);
+    bar.style.gridColumn = `${gridIndex + 1} / span ${length}`;
+    bar.style.position = "absolute";
+    bar.style.top = "18px";
+    cells[gridIndex].appendChild(bar);
   }
 });
 
@@ -334,3 +335,4 @@ eventBars.forEach(({ start, length, title }) => {
   </script>
 </body>
 </html>
+
