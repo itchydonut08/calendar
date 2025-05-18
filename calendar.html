@@ -101,16 +101,20 @@
     }
 
     .event-bar {
-      position: absolute;
-      height: 16px;
-      background-color: #cce5ff;
-      border-radius: 4px;
-      font-size: 0.6rem;
-      padding: 0 4px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      z-index: 1;
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  right: 2px;
+  height: 14px;
+  background-color: #cce5ff;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  line-height: 14px;
+  padding: 0 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  z-index: 0;
     }
 
     .topbar {
@@ -242,19 +246,35 @@
         cells.push(cell);
       }
 
-      cells.forEach((cell, i) => {
-        const cellDate = new Date(year, month, 1 - firstDay + i);
-        const dateKey = cellDate.toDateString();
-        if (eventsByDate[dateKey]) {
-          const bar = document.createElement("div");
-          bar.className = "event-bar";
-          bar.style.top = "16px";
-          bar.style.left = "0";
-          bar.style.width = "100%";
-          bar.textContent = eventsByDate[dateKey][0];
-          cell.appendChild(bar);
-        }
-      });
+      // render smooth multi-day event bars
+const eventBars = {};
+Object.entries(eventsByDate).forEach(([dateStr, titles]) => {
+  const startDate = new Date(dateStr);
+  const title = titles[0];
+
+  if (!eventBars[title]) {
+    eventBars[title] = { start: startDate, length: 1 };
+  } else {
+    eventBars[title].length++;
+  }
+});
+
+Object.values(eventBars).forEach(({ start, length }, index) => {
+  const dayOffset = Math.floor((start - new Date(year, month, 1)) / (1000 * 60 * 60 * 24));
+  const colStart = new Date(year, month, 1).getDay();
+  const gridIndex = colStart + dayOffset;
+
+  if (gridIndex >= 0 && gridIndex < cells.length) {
+    const bar = document.createElement("div");
+    bar.className = "event-bar";
+    bar.style.top = "18px";
+    bar.style.left = "2px";
+    bar.style.right = "2px";
+    bar.style.width = `calc(${length * 100}% - 4px)`;
+    bar.textContent = Object.keys(eventBars)[index];
+    cells[gridIndex].appendChild(bar);
+  }
+});
 
       cal.appendChild(days);
       calendarContainer.appendChild(cal);
@@ -306,3 +326,4 @@
   </script>
 </body>
 </html>
+
