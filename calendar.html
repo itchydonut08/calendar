@@ -246,31 +246,41 @@
       }
 
       // render smooth multi-day event bars
-const eventBars = {};
+const eventBars = [];
+const seen = new Set();
+
 Object.entries(eventsByDate).forEach(([dateStr, titles]) => {
   const startDate = new Date(dateStr);
   const title = titles[0];
+  const key = title + startDate.toDateString();
 
-  if (!eventBars[title]) {
-    eventBars[title] = { start: startDate, length: 1 };
-  } else {
-    eventBars[title].length++;
+  if (!seen.has(key)) {
+    let length = 1;
+    let cursor = new Date(startDate);
+    cursor.setDate(cursor.getDate() + 1);
+    while (eventsByDate[cursor.toDateString()]?.includes(title)) {
+      length++;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    eventBars.push({ title, start: startDate, length });
+    seen.add(key);
   }
 });
 
-Object.values(eventBars).forEach(({ start, length }, index) => {
-  const dayOffset = Math.floor((start - new Date(year, month, 1)) / (1000 * 60 * 60 * 24));
-  const colStart = new Date(year, month, 1).getDay();
-  const gridIndex = colStart + dayOffset;
+const startOfMonth = new Date(year, month, 1);
+const dayOffsetBase = startOfMonth.getDay();
 
+const grid = days;
+eventBars.forEach(({ start, length, title }) => {
+  const offset = Math.floor((start - startOfMonth) / (1000 * 60 * 60 * 24));
+  const gridIndex = offset + dayOffsetBase;
   if (gridIndex >= 0 && gridIndex < cells.length) {
     const bar = document.createElement("div");
     bar.className = "event-bar";
+    bar.textContent = title;
     bar.style.gridColumnStart = gridIndex + 1;
     bar.style.gridColumnEnd = `span ${length}`;
-    bar.style.position = "relative";
-    bar.textContent = Object.keys(eventBars)[index];
-    cells[gridIndex].appendChild(bar);
+    grid.appendChild(bar);
   }
 });
 
