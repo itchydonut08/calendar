@@ -216,13 +216,19 @@
       // No need to re-init client here since it's already loaded above
       const token = localStorage.getItem("gmail_token");
       gapi.client.setToken({ access_token: token });
-      const res = await gapi.client.calendar.events.list({
-        calendarId: 'primary',
-        timeMin: new Date().toISOString(),
-        timeMax: new Date(new Date().getFullYear(), new Date().getMonth() + 3, 1).toISOString(),
-        singleEvents: true,
-        orderBy: 'startTime'
-      });
+      let res;
+      try {
+        res = await gapi.client.calendar.events.list({
+          calendarId: 'primary',
+          timeMin: new Date().toISOString(),
+          timeMax: new Date(new Date().getFullYear(), new Date().getMonth() + 3, 1).toISOString(),
+          singleEvents: true,
+          orderBy: 'startTime'
+        });
+      } catch (err) {
+        console.error("Failed to load calendar events:", err);
+        return;
+      }
       if (res.result && Array.isArray(res.result.items)) {
         res.result.items.forEach(event => {
           if (!event.start || !event.end || !event.summary) return;
