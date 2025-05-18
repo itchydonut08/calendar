@@ -113,7 +113,7 @@
           return;
         }
 
-                res.result.items.forEach(event => {
+        res.result.items.forEach(event => {
           if (!event.start || !event.end || !event.summary || event.eventType === 'task') return;
 
           const isAllDay = event.start.date && event.end.date;
